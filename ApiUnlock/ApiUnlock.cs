@@ -12,25 +12,6 @@ namespace ApiUnlock
     {
         // Unsafe code. Enable unsafe code from Project properties, Build
 
-        const uint INVOCATION_FLAGS_UNKNOWN = 0u;
-        const uint INVOCATION_FLAGS_INITIALIZED = 1u;
-        const uint INVOCATION_FLAGS_NO_INVOKE = 2u;
-        const uint INVOCATION_FLAGS_NEED_SECURITY = 4u;
-        const uint INVOCATION_FLAGS_NO_CTOR_INVOKE = 8u;
-        const uint INVOCATION_FLAGS_IS_CTOR = 16u;
-        const uint INVOCATION_FLAGS_RISKY_METHOD = 32u;
-        const uint INVOCATION_FLAGS_NON_W8P_FX_API = 64u;
-        const uint INVOCATION_FLAGS_IS_DELEGATE_CTOR = 128u;
-        const uint INVOCATION_FLAGS_CONTAINS_STACK_POINTERS = 256u;
-        const uint INVOCATION_FLAGS_SPECIAL_FIELD = 16u;
-        const uint INVOCATION_FLAGS_FIELD_SPECIAL_CAST = 32u;
-        const uint INVOCATION_FLAGS_CONSTRUCTOR_INVOKE = 268435456u;
-
-        const uint APPX_FLAGS_API_CHECK = 16;
-        const uint APPX_FLAGS_APPX_MODEL = 2;
-
-
-
 
         private static bool initialized;
         private static bool initializing;
@@ -44,12 +25,9 @@ namespace ApiUnlock
                 if (Marshal.SizeOf(typeof(IntPtr)) != 4)
                     throw new NotSupportedException("Only 32 bit platforms are currently supported. Please set Project properties -> Build -> Target platform to x86");
 
-
                 EnableReflectionForUntrustedAssembly(typeof(ApiUnlocker).GetTypeInfo().Assembly, (f, o, v) => f.SetValue(o, v));
                 MarkAppDomainNoProfileCheck();
                 initializing = false;
-
-
                 initialized = true;
             }
         }
@@ -174,7 +152,7 @@ namespace ApiUnlock
         private unsafe struct ManagedReferenceHolder
         {
             [FieldOffset(0)]
-            public ulong Marker1;
+            public ulong Marker;
 
             [FieldOffset(8)]
             public object Reference;
@@ -185,7 +163,7 @@ namespace ApiUnlock
             ManagedReferenceHolder holder;
             holder.Reference = obj;
 
-            var q = &holder.Marker1;
+            var q = &holder.Marker;
             q++;
             var objptr = (void*)(*q);
             return objptr;
@@ -214,13 +192,33 @@ namespace ApiUnlock
         }
 
 
-        public delegate bool VirtualProtectFunction(void* lpAddress, UIntPtr dwSize, int flNewProtect, int* lpflOldProtect);
-        public delegate void* VirtualAllocFunction(void* lpAddress, UIntPtr dwSize, int flAllocationType, int flProtect);
+        private delegate bool VirtualProtectFunction(void* lpAddress, UIntPtr dwSize, int flNewProtect, int* lpflOldProtect);
+        private delegate void* VirtualAllocFunction(void* lpAddress, UIntPtr dwSize, int flAllocationType, int flProtect);
 
         const int MEM_COMMIT = 0x00001000;
+
         const int PAGE_EXECUTE_READWRITE = 0x40;
         const int PAGE_EXECUTE = 0x10;
         const int PAGE_READWRITE = 0x04;
+
+        const uint INVOCATION_FLAGS_UNKNOWN = 0u;
+        const uint INVOCATION_FLAGS_INITIALIZED = 1u;
+        const uint INVOCATION_FLAGS_NO_INVOKE = 2u;
+        const uint INVOCATION_FLAGS_NEED_SECURITY = 4u;
+        const uint INVOCATION_FLAGS_NO_CTOR_INVOKE = 8u;
+        const uint INVOCATION_FLAGS_IS_CTOR = 16u;
+        const uint INVOCATION_FLAGS_RISKY_METHOD = 32u;
+        const uint INVOCATION_FLAGS_NON_W8P_FX_API = 64u;
+        const uint INVOCATION_FLAGS_IS_DELEGATE_CTOR = 128u;
+        const uint INVOCATION_FLAGS_CONTAINS_STACK_POINTERS = 256u;
+        const uint INVOCATION_FLAGS_SPECIAL_FIELD = 16u;
+        const uint INVOCATION_FLAGS_FIELD_SPECIAL_CAST = 32u;
+        const uint INVOCATION_FLAGS_CONSTRUCTOR_INVOKE = 268435456u;
+
+        const uint APPX_FLAGS_API_CHECK = 16;
+        const uint APPX_FLAGS_APPX_MODEL = 2;
+
+
 
     }
 }
