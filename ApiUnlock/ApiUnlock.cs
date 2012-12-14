@@ -61,7 +61,7 @@ namespace ApiUnlock
             var t = Type.GetType("System.AppDomain");
             var value = GetField(t, "s_flags", null);
             var intval = Convert.ToUInt32(value);
-  
+
             intval &= ~APPX_FLAGS_API_CHECK;
             intval &= ~APPX_FLAGS_APPX_MODEL;
             SetField(t, "s_flags", null, Enum.ToObject(value.GetType(), intval));
@@ -191,6 +191,39 @@ namespace ApiUnlock
             return objptr;
         }
 
+        public static readonly Type Win32Native = Type.GetType("Microsoft.Win32.Win32Native");
+
+        public static TDelegate GetWin32Function<TDelegate>(string module, string function)
+        {
+            var mod = (IntPtr)InvokeMethod(Win32Native, "GetModuleHandle", null, module);
+            var func = (IntPtr)InvokeMethod(Win32Native, "GetProcAddress", null, mod, function);
+            return GetDelegateForFunctionPointer<TDelegate>((void*)func);
+        }
+
+        private static VirtualAllocFunction _VirtualAlloc;
+
+        public static void* AllocateExecutableMemory(int size)
+        {
+            if (_VirtualAlloc == null) _VirtualAlloc = GetWin32Function<VirtualAllocFunction>("kernel32.dll", "VirtualAlloc");
+            return _VirtualAlloc(null, new UIntPtr((uint)size), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+        }
+
+        public static TDelegate GetDelegateForFunctionPointer<TDelegate>(void* pointer)
+        {
+            return (TDelegate)(object)Marshal.GetDelegateForFunctionPointer(new IntPtr(pointer), typeof(TDelegate));
+        }
+
+
+        public delegate bool VirtualProtectFunction(void* lpAddress, UIntPtr dwSize, int flNewProtect, int* lpflOldProtect);
+        public delegate void* VirtualAllocFunction(void* lpAddress, UIntPtr dwSize, int flAllocationType, int flProtect);
+
+        public delegate int MessageBoxWFunction(void* hwnd, string lpText, string lpCaption, uint uType);
+
+
+        const int MEM_COMMIT = 0x00001000;
+        const int PAGE_EXECUTE_READWRITE = 0x40;
+        const int PAGE_EXECUTE = 0x10;
+        const int PAGE_READWRITE = 0x04;
 
     }
 }
