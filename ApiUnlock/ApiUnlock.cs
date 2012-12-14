@@ -36,7 +36,7 @@ namespace ApiUnlock
 
         private static void MarkAppDomainNoProfileCheck()
         {
-            var t = Type.GetType("System.AppDomain");
+            var t = GetType("System.AppDomain");
             var value = GetField(t, "s_flags", null);
             var intval = Convert.ToUInt32(value);
 
@@ -128,6 +128,11 @@ namespace ApiUnlock
             }
         }
 
+        public static Type GetType(string typeName)
+        {
+            return Type.GetType(typeName);
+        }
+
 
 
         private unsafe static void MarkMemberDontNeedSecurity(MemberInfo fieldOrMethod)
@@ -169,7 +174,7 @@ namespace ApiUnlock
             return objptr;
         }
 
-        public static readonly Type Win32Native = Type.GetType("Microsoft.Win32.Win32Native");
+        public static readonly Type Win32Native = GetType("Microsoft.Win32.Win32Native");
 
         public static TDelegate GetWin32Function<TDelegate>(string module, string function)
         {
