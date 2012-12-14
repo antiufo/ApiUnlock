@@ -217,9 +217,6 @@ namespace ApiUnlock
         public delegate bool VirtualProtectFunction(void* lpAddress, UIntPtr dwSize, int flNewProtect, int* lpflOldProtect);
         public delegate void* VirtualAllocFunction(void* lpAddress, UIntPtr dwSize, int flAllocationType, int flProtect);
 
-        public delegate int MessageBoxWFunction(void* hwnd, string lpText, string lpCaption, uint uType);
-
-
         const int MEM_COMMIT = 0x00001000;
         const int PAGE_EXECUTE_READWRITE = 0x40;
         const int PAGE_EXECUTE = 0x10;

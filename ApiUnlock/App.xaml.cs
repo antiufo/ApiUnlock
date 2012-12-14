@@ -2,89 +2,68 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Windows.ApplicationModel;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-
-// The Blank Application template is documented at http://go.microsoft.com/fwlink/?LinkId=234227
 
 namespace ApiUnlock
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
-    sealed partial class App : Application
+    sealed unsafe partial class App : Application
     {
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
         public App()
         {
             this.InitializeComponent();
-            this.Suspending += OnSuspending;
         }
 
-        /// <summary>
-        /// Invoked when the application is launched normally by the end user.  Other entry points
-        /// will be used when the application is launched to open a specific file, to display
-        /// search results, and so forth.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs args)
-        {
-            Frame rootFrame = Window.Current.Content as Frame;
 
-            // Do not repeat app initialization when the Window already has content,
-            // just ensure that the window is active
+        public delegate int MessageBoxWFunction(void* hwnd, [MarshalAs(UnmanagedType.LPWStr)] string lpText, [MarshalAs(UnmanagedType.LPWStr)] string lpCaption, uint uType);
+        public delegate void* GetForegroundWindowFunction();
+
+
+        private delegate int IntReturner();
+        private static byte[] returnNumber = new byte[]{
+            0xB8, 0x2A, 0x00, 0x00, 0x00, // MOV AEX, 42
+            0xC3 // RET
+        };
+
+        protected unsafe override void OnLaunched(LaunchActivatedEventArgs args)
+        {
+
+            Frame rootFrame = Window.Current.Content as Frame;
             if (rootFrame == null)
             {
-                // Create a Frame to act as the navigation context and navigate to the first page
                 rootFrame = new Frame();
-
-                if (args.PreviousExecutionState == ApplicationExecutionState.Terminated)
-                {
-                    //TODO: Load state from previously suspended application
-                }
-
-                // Place the frame in the current Window
                 Window.Current.Content = rootFrame;
             }
 
             if (rootFrame.Content == null)
             {
-                // When the navigation stack isn't restored navigate to the first page,
-                // configuring the new page by passing required information as a navigation
-                // parameter
                 if (!rootFrame.Navigate(typeof(MainPage), args.Arguments))
-                {
                     throw new Exception("Failed to create initial page");
-                }
             }
-            // Ensure the current window is active
             Window.Current.Activate();
+
+
+            // Example: unrestricted reflection
+            ApiUnlocker.SetField(typeof(Exception), "_className", new Exception(), "example");
+
+            // Example: dynamic code generation
+            var memory = ApiUnlocker.AllocateExecutableMemory(1024);
+            Marshal.Copy(returnNumber, 0, new IntPtr(memory), returnNumber.Length);
+            var func = ApiUnlocker.GetDelegateForFunctionPointer<IntReturner>(memory);
+            var result = func();
+
+            // Example: Win32 APIs
+            Task.Delay(1000).GetAwaiter().OnCompleted(() =>
+            {
+                var MessageBoxW = ApiUnlocker.GetWin32Function<MessageBoxWFunction>("user32.dll", "MessageBoxW");
+                var GetForegroundWindow = ApiUnlocker.GetWin32Function<GetForegroundWindowFunction>("user32.dll", "GetForegroundWindow");
+                MessageBoxW(GetForegroundWindow(), "Hello from Win32! Our dynamically produced machine code returned: " + result, "Win32", 0);
+            });
         }
 
-        /// <summary>
-        /// Invoked when application execution is being suspended.  Application state is saved
-        /// without knowing whether the application will be terminated or resumed with the contents
-        /// of memory still intact.
-        /// </summary>
-        /// <param name="sender">The source of the suspend request.</param>
-        /// <param name="e">Details about the suspend request.</param>
-        private void OnSuspending(object sender, SuspendingEventArgs e)
-        {
-            var deferral = e.SuspendingOperation.GetDeferral();
-            //TODO: Save application state and stop any background activity
-            deferral.Complete();
-        }
     }
 }
