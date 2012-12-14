@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -70,7 +71,7 @@ namespace ApiUnlock
         }
 
 
-
+        #region method/field/property reflection method wrappers
         public static object InvokeMethod(Type type, string methodName, object thisObject, params object[] parameters)
         {
             return InvokeMethod(type.GetTypeInfo().GetDeclaredMethod(methodName), thisObject, parameters);
@@ -127,11 +128,50 @@ namespace ApiUnlock
                 return field.GetValue(thisObject);
             }
         }
+        public static void SetProperty(Type type, string propertyName, object thisObject, object value, params object[] index)
+        {
+            SetProperty(type.GetTypeInfo().GetDeclaredProperty(propertyName), thisObject, value, index);
+        }
+
+        public static void SetProperty(PropertyInfo property, object thisObject, object value, params object[] index)
+        {
+            Initialize();
+            try
+            {
+                property.SetValue(thisObject, value, index);
+            }
+            catch (MemberAccessException)
+            {
+                MarkMemberDontNeedSecurity(property);
+                property.SetValue(thisObject, value, index);
+            }
+        }
+
+
+        public static object GetProperty(Type type, string propertyName, object thisObject, params object[] index)
+        {
+            return GetProperty(type.GetTypeInfo().GetDeclaredProperty(propertyName), thisObject, index);
+        }
+
+        public static object GetProperty(PropertyInfo property, object thisObject, params object[] index)
+        {
+            Initialize();
+            try
+            {
+                return property.GetValue(thisObject, index);
+            }
+            catch (MemberAccessException)
+            {
+                MarkMemberDontNeedSecurity(property);
+                return property.GetValue(thisObject, index);
+            }
+        }
 
         public static Type GetType(string typeName)
         {
             return Type.GetType(typeName);
         }
+        #endregion
 
 
 
@@ -196,6 +236,38 @@ namespace ApiUnlock
             return (TDelegate)(object)Marshal.GetDelegateForFunctionPointer(new IntPtr(pointer), typeof(TDelegate));
         }
 
+        // This doesn't work yet. Assemblies are loaded, but some types may fail to load
+        // due to missing referenced assemblies, even if they have already been loaded manually.
+
+        //private static List<Assembly> loadedAssemblies = new List<Assembly>();
+        //public static Assembly LoadFrameworkAssembly(string name, bool loadReferencedAssemblies)
+        //{
+        //    //var asm = (Assembly)InvokeMethod(typeof(Assembly).GetTypeInfo().GetDeclaredMethods("LoadWithPartialName").Single(x =>
+        //    //{
+        //    //    var parameters = x.GetParameters();
+        //    //    return parameters.Length == 1 && parameters[0].ParameterType == typeof(string);
+        //    //}), null, name);
+        //    var mscorlib = (string)GetProperty(typeof(Assembly), "Location", typeof(object).GetTypeInfo().Assembly);
+        //    var root = Path.GetDirectoryName(mscorlib);
+
+        //    var asm = LoadAssemblyFromFile(Path.Combine(root, name + ".dll"));
+        //    if (loadedAssemblies.Contains(asm)) return asm;
+        //    loadedAssemblies.Add(asm);
+        //    if (loadReferencedAssemblies)
+        //    {
+        //        var referenced = (AssemblyName[])InvokeMethod(typeof(Assembly).GetTypeInfo().GetDeclaredMethod("GetReferencedAssemblies"), asm);
+        //        foreach (var reference in referenced)
+        //        {
+        //            LoadFrameworkAssembly(reference.Name, loadReferencedAssemblies);
+        //        }
+        //    }
+        //    return asm;
+        //}
+
+        public static Assembly LoadAssemblyFromFile(string path)
+        {
+            return (Assembly)InvokeMethod(typeof(Assembly).GetTypeInfo().GetDeclaredMethods("LoadFile").Single(x => x.GetParameters().Length == 1), null, path);
+        }
 
         private delegate bool VirtualProtectFunction(void* lpAddress, UIntPtr dwSize, int flNewProtect, int* lpflOldProtect);
         private delegate void* VirtualAllocFunction(void* lpAddress, UIntPtr dwSize, int flAllocationType, int flProtect);
