@@ -1,0 +1,49 @@
+# Ignore file for Visual Studio
+# http://blogs.planetcloud.co.uk/mygreatdiscovery/post/Mercurial-ignore-file.aspx
+# http://stackoverflow.com/questions/34784/mercurial-setup-for-visual-studio-2008-projects
+
+# Ignore Visual Studio files
+*.obj
+#*.exe
+#*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vshost.*
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.tlog
+*.idb
+*.sdf
+*.opensdf
+*.embed.*
+*.intermediate.*
+*.lastbuildstate
+*_manifest.rc
+*.ipch
+*.lib
+*.sbr
+*.scc
+[Bb]in
+[Dd]ebug*/
+obj/
+[Rr]elease*/
+_ReSharper*/
+[Tt]est[Rr]esult*
+[Bb]uild[Ll]og.*
+*.[Pp]ublish.xml
+
+*.vsp
+*.psess
+
+
+ApiUnlock/AppPackages/
